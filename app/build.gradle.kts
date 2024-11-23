@@ -1,9 +1,12 @@
+import java.util.regex.Pattern.compile
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     //id("com.google.devtools.ksp") //MS
     //id ("com.google.devtools.ksp") version "1.8.0-1.0.8" //MS
     id("kotlin-kapt") //MS
+
 
 }
 
@@ -55,6 +58,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.appcompat:appcompat:1.7.0")
     val room_version = "2.6.1" //MS
 
     //Retrofit
@@ -81,6 +85,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     kapt("androidx.room:room-compiler:$room_version") //MS
     implementation("androidx.room:room-ktx:$room_version") //MS
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7") //MS
     //testImplementation("androidx.room:room-testing:$room_version") //MS
+    implementation("com.android.support:appcompat-v7:27.1.0") //MS
 
 }
