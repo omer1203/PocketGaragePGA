@@ -464,6 +464,6 @@ fun ValidateAll(
             !emailError.value &&
             !phoneError.value &&
             !passwordError.value &&
-            !questionError.value.isEmpty() &&
+            questionError.value.isEmpty() &&
             !answerError.value
 }
