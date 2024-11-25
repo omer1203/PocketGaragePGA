@@ -1,12 +1,9 @@
 
 //REGISTRATION SCREEN - Omer
 
-package com.example.registrationcheck
+package com.example.homepage
 
-import android.os.Bundle
-import android.text.TextUtils
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,18 +12,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.Surface
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -35,21 +29,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.LinearGradient
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+
+
 import com.example.homepage.R
-import org.w3c.dom.Text
-import java.security.KeyStore.TrustedCertificateEntry
-import kotlin.math.exp
-import androidx.compose.runtime.LaunchedEffect as AndroidxComposeRuntimeLaunchedEffect
+
 
 
 
@@ -91,10 +83,8 @@ fun linearGradient(
     )
 }
 
-
-@Preview(showBackground = true)
 @Composable
-fun RegistrationScreen(onRegistrationComplete: () -> Unit = {}) {
+fun RegistrationScreen(navController: NavController, onRegistrationComplete: () -> Unit = {}) {
     // start by initializing the variables for user input by remember
     val firstName = remember { mutableStateOf("") }
     val lastName = remember { mutableStateOf("") }
@@ -122,16 +112,18 @@ fun RegistrationScreen(onRegistrationComplete: () -> Unit = {}) {
         "What is your mother's maiden name?"
     )
 
+    val isDuplicate = remember { mutableStateOf(false)}
+    val duplicatePopUp = remember { mutableStateOf("")}
+
+
     val expanded = remember { mutableStateOf(false) } // to handle drop-down menu
     val generalError = remember { mutableStateOf("") } // error message
-    val colorList =
-        listOf(Color(0xFF470404), Color(0x6F1F1F)) // color list for the gradient in the background
+    val colorList = listOf(Color(0xFF470404), Color(0x6F1F1F)) // color list for the gradient in the background
 
     //Start of the registration screen layout
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(20.dp))
             .background(
                 brush = linearGradient(
                     isVerticalGradient = true,
@@ -323,7 +315,8 @@ fun RegistrationScreen(onRegistrationComplete: () -> Unit = {}) {
                 Button(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        val isValid = ValidateAll(
+                        val duplicateMessage = checkDuplicate(userID.value, email.value, phone.value) // check for duplicates
+                        val isValid = validateAll(
                             firstName.value, firstNameError,
                             lastName.value, lastNameError,
                             userID.value, userIDError,
@@ -333,27 +326,46 @@ fun RegistrationScreen(onRegistrationComplete: () -> Unit = {}) {
                             chosenQuestion.value, questionError,
                             answer.value, answerError
                         )
-                        if (isValid) {
-                            onRegistrationComplete() // Navigate to home when valid
-                        } else {
-                            generalError.value = "Correct the highlighted errors in the form"
+                        if (duplicateMessage != null) { // if there are duplicates
+                            isDuplicate.value = true
+                            duplicatePopUp.value = duplicateMessage // show the duplicates
+                        }
+                        else if (isValid) {
+                            onRegistrationComplete() // if everything is valid, then go to home screen
                         }
                     }
                 ) {
                     Text("Register")
                 }
 
+                Spacer(modifier = Modifier.height(10.dp)) // to create more space between the ned and the register button
+
+                // In the case the user already has an acount
+                Text(
+                    text = "Already Registered? Click here to login.",
+                    color = Color.Red,
+                    modifier = Modifier.clickable {
+                        navController.navigate("login") // go to the login page
+                    }
+                )
+
 
                 //
-                if (generalError.value.isNotEmpty()) { // general error message
-                    Text(
-                        text = generalError.value,
-                        color = Color.Red,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 10.dp)
+                if (isDuplicate.value) { // in the case there are duplicates
+                    AlertDialog( // create an alertBox
+                        onDismissRequest = { isDuplicate.value = false }, // dismiss the popUp
+                        confirmButton = {
+                            TextButton(
+                                onClick = { isDuplicate.value = false }
+                            ) {
+                                Text("OK")
+                            }
+                        },
+                        title = { Text("Duplicate Entry") },
+                        text = { Text(duplicatePopUp.value) } // List the duplicates
                     )
                 }
+
 
 
             }
@@ -376,7 +388,7 @@ fun CreateOutText(
         value = value.value, // current value of the text field
         modifier = modifier.fillMaxWidth(), // make the field max
         onValueChange = { value.value = it }, // updating the field when the inputted
-        label = { Text(text, fontSize = 16.sp,) }, // displaying the label
+        label = { Text(text, fontSize = 16.sp) }, // displaying the label
         keyboardOptions = KeyboardOptions(keyboardType = keyboardTyping), // assigning the keyboard type
         singleLine = true, // input must be in one line
         isError = iserror// highlight the field in the case of an error
@@ -429,7 +441,7 @@ class Validator {
 
 
 //Function that validated all input fields and errors
-fun ValidateAll(
+fun validateAll(
     firstName: String, firstNameError: MutableState<Boolean>, // mutable since it will change
     lastName: String, lastNameError: MutableState<Boolean>,
     userID: String, userIDError: MutableState<Boolean>,
@@ -466,4 +478,40 @@ fun ValidateAll(
             !passwordError.value &&
             questionError.value.isEmpty() &&
             !answerError.value
+}
+
+//FUNCTION THAT CHECKS FOR DUPLICATES WHILE REGISTERING
+fun checkDuplicate(userID: String, email: String, phone: String): String?{
+    val existsErrors = mutableListOf<String>()
+
+    val existsUserID = "DoesExist"
+    if (userID == existsUserID) { // here it will check with the database if it already exists
+        existsErrors.add( "UserID already exists")
+    }
+
+    val existsEmail = "abc@gmail.com"
+    if(email == existsEmail)  {// here it will check with the database if it already exists
+        existsErrors.add("Email already exists")
+    }
+
+    val existsPhone = "1234567890"
+    if(phone == existsPhone)  {// here it will check with the database if it already exists
+        existsErrors.add("Phone number already exists")
+    }
+
+    return if(existsErrors.isNotEmpty()) { // if there exists any errors
+        existsErrors.joinToString("\n") // returns all of them in different line
+    }
+    else null
+
+}
+
+
+//This is just to show preview, remove later if neccessary
+@Preview(showBackground = true)
+@Composable
+fun PreviewRegistrationScreen() {
+    MaterialTheme {
+        RegistrationScreen(navController = rememberNavController())
+    }
 }

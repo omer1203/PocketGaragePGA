@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import com.example.registrationcheck.RegistrationScreen
+import com.example.homepage.RegistrationScreen
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -83,25 +83,40 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
 
+   /* NavHost(
+        navController = navController,
+        startDestination = "home" // Start at the login screen
+    ) {
+        composable("home") {
+            Screen()
+        }
+    }
+}*/
     NavHost(
         navController = navController,
-        startDestination = "registration" // Start at the registration screen
+        startDestination = "login" // Start at the login screen
     ) {
+        composable("login") {
+            LoginScreen(navController)
+        }
+
         composable("registration") {
             RegistrationScreen(
+                navController,
                 onRegistrationComplete = {
                     navController.navigate("home") {
-                        popUpTo("registration") { inclusive = true } // Clears registration from the backstack
+                        popUpTo("registration") { inclusive = true }
                     }
                 }
             )
         }
 
         composable("home") {
-            Screen() // Ensure this is reachable
+            Screen()
         }
     }
 }
+
 
 
 @Composable
